@@ -208,8 +208,8 @@ class sample_definition_class():
                     img = fits.getdata(img_data, ext=0)
                     fig = go.Figure()
                     fig.add_trace(go.Heatmap(x=x, y=y, z=img, zmax=img.max(),zmin=img.min(), colorbar = {'title': color_label}))
-                    fig.update_xaxes(title='x (arcsec)')
-                    fig.update_yaxes(title='y (arcsec)')
+                    fig.update_xaxes(title='x (arcmin)')
+                    fig.update_yaxes(title='y (arcmin)')
                 else: return [{}]
             elif (skyClickData['points'][0]['x'] in self.samples['DGS'].data['RA'].unique()):
                 dgs = self.samples['DGS']
@@ -223,8 +223,8 @@ class sample_definition_class():
                     img = fits.getdata(img_data, ext=0)
                     fig = go.Figure()
                     fig.add_trace(go.Heatmap(x=x, y=y, z=img, zmax=img.max(),zmin=img.min(), colorbar = {'title': color_label}))
-                    fig.update_xaxes(title='x (arcsec)')
-                    fig.update_yaxes(title='y (arcsec)')
+                    fig.update_xaxes(title='x (arcmin)')
+                    fig.update_yaxes(title='y (arcmin)')
                 else: return [{}]
             else: return [{}]
         else:
@@ -239,8 +239,8 @@ class sample_definition_class():
                     img = fits.getdata(img_data, ext=0)
                     fig = go.Figure()
                     fig.add_trace(go.Heatmap(x=x, y=y, z=img, zmax=img.max(),zmin=img.min(), colorbar = {'title': color_label}))
-                    fig.update_xaxes(title='x (arcsec)')
-                    fig.update_yaxes(title='y (arcsec)')
+                    fig.update_xaxes(title='x (arcmin)')
+                    fig.update_yaxes(title='y (arcmin)')
                 else: return [{}]
             else: return [{}]
         if options!=None:
@@ -361,8 +361,8 @@ class sample_definition_class():
                         img = fits.getdata(img_data, ext=0)
                         fig = go.Figure()
                         fig.add_trace(go.Heatmap(x=x, y=y, z=img, zmax=img.max(),zmin=img.min(), colorbar = {'title': color_label}))
-                        fig.update_xaxes(title='x (arcsec)')
-                        fig.update_yaxes(title='y (arcsec)')
+                        fig.update_xaxes(title='x (arcmin)')
+                        fig.update_yaxes(title='y (arcmin)')
                     else: fig = {}
             elif (hoverData['points'][0]['x'] in self.samples['DGS'].data['RA'].unique()):
                 dgs = self.samples['DGS']
@@ -376,8 +376,8 @@ class sample_definition_class():
                     img = fits.getdata(img_data, ext=0)
                     fig = go.Figure()
                     fig.add_trace(go.Heatmap(x=x, y=y, z=img, zmax=img.max(),zmin=img.min(), colorbar = {'title': color_label}))
-                    fig.update_xaxes(title='x (arcsec)')
-                    fig.update_yaxes(title='y (arcsec)')
+                    fig.update_xaxes(title='x (arcmin)')
+                    fig.update_yaxes(title='y (arcmin)')
                 else: fig = {}
             else:
                 fig = {}
