@@ -10,6 +10,7 @@ for all of these elements, and includes functions to act on them for
 necessary unit conversions. It also includes the necessary functions for fitting
 the TolTEC bands and creating the signal to noise map.
 """
+from pdb import post_mortem
 from astropy.utils.data import get_pkg_data_filename
 from astropy.io import fits, ascii
 from astropy import units as u
@@ -146,6 +147,86 @@ class Sample:
     #Correctly reads in all associated FITs for PACS galaxy
     # def loadPacs(self):
     #     pass
+    def get_flux(self, pix_col, pix_row, herschelBand, galaxyName, sampleName):
+        
+        row = self.data['Object Name'] == galaxyName
+        img_path = copy.deepcopy(self.data[herschelBand][row].values[0])
+        img = fits.open(img_path, memmap=False)
+
+        # get clicked image
+        try:
+            header = img[0].header
+            img = img[1].data
+            wcs = WCS(header)
+            pos = 1
+            nx, ny = img.shape
+        except:
+            header = img[0].header
+            img = img[0].data
+            wcs = WCS(header)
+            pos = 0
+            nx, ny = img.shape
+
+        # assume 1=cols, 2=rows
+        cdelt1 = header['CDELT1']*3600
+        cdelt2 = header['CDELT2']*3600
+
+        crpix1 = header['CRPIX1']
+        crpix2 = header['CRPIX2']
+
+        # pretend images are re-centered at (0,0) in units of arcseconds
+        # so here we get the real pixel value back
+        srow = pix_row*cdelt2 + crpix2
+        scol = pix_col*cdelt1 + crpix1
+
+        print(srow, scol)
+        # get ra dec
+        ra, dec = wcs.all_pix2world(scol, srow, 0, ra_dec_order = True)  # ra = col, dec = row
+        print(ra, dec)
+        # see if pixels are recovered
+        sy_test, sx_test = wcs.all_world2pix(ra, dec, 0, ra_dec_order = True)
+        print(sy_test,sx_test)
+
+        fluxes = []
+        pys = []
+        pxs = []
+
+        print('start loop')
+        for i in self.herschel_bands:
+            img_path = copy.deepcopy(self.data[i][row].values[0])
+            hdul = fits.open(img_path)
+            wcs = WCS(hdul[0].header)
+            
+            cdelt1 = hdul[0].header['CDELT1']*3600
+            cdelt2 = hdul[0].header['CDELT2']*3600
+
+            crpix1 = hdul[0].header['CRPIX1']
+            crpix2 = hdul[0].header['CRPIX2']
+                
+            pix_col, pix_row = wcs.all_world2pix(ra, dec, 0, ra_dec_order = True)
+            print(pix_col,pix_row)
+
+            print()
+            
+            pix_col = np.round(pix_col)  # switched from floor to round
+            pix_row = np.round(pix_row)
+            print('floor',pix_col,pix_row)
+                
+            pix_col = int(pix_col)
+            pix_row = int(pix_row)
+            print('int',pix_col,pix_row)
+            
+            pxs.append(pix_row)
+            pys.append(pix_col)
+            
+            fluxes.append(hdul[pos].data[pix_row,pix_col])
+            
+        print('fluxes',fluxes)
+        print('input pixel: ', scol, srow)
+        print('input row, col', pix_row, pix_col)
+        print('pys',pys)
+        print('pxs',pxs)
+        return fluxes
     
     def center_arcsec(self, img, pos):
         '''
@@ -153,19 +234,19 @@ class Sample:
         '''
         try:
             header = img[0].header
-            data = img[1].data
-            nx, ny = data.shape
+            img = img[1].data
+            nx, ny = img.shape
         except:
             header = img[0].header
-            data = img[0].data
-            nx, ny = data.shape
+            img = img[0].data
+            nx, ny = img.shape
 
         # header = img[pos].header
         # img = img[pos].data
         # nx, ny = img.shape
         
-        cdelt1 = np.abs(header['cdelt1'])*3600 # np.abs
-        cdelt2 = np.abs(header['cdelt2'])*3600 # np.abs
+        cdelt1 = header['cdelt1']*3600 # np.abs
+        cdelt2 = header['cdelt2']*3600 # np.abs
         # pixel_size = header['pfov']  # arcseconds, DGS don't have this
 
         # ny = header['naxis1']
@@ -201,77 +282,77 @@ class Sample:
         img_x, img_y = self.center_arcsec(img, pos)
         return color_label, img_y, img_x
 
-    def get_flux(self, x, y, herschelBand, galaxyName, sampleName):
-        '''
-        Get's flux for clicked pixel (x,y) which is in the units of the
-        map
-        '''
-        row = self.data['Object Name'] == galaxyName
+    # def get_flux(self, x, y, herschelBand, galaxyName, sampleName):
+    #     '''
+    #     Get's flux for clicked pixel (x,y) which is in the units of the
+    #     map
+    #     '''
+    #     row = self.data['Object Name'] == galaxyName
 
-        img_path = copy.deepcopy(self.data[herschelBand][row].values[0])
-        img = fits.open(img_path, memmap=False)
+    #     img_path = copy.deepcopy(self.data[herschelBand][row].values[0])
+    #     img = fits.open(img_path, memmap=False)
 
-        try:
-            pos = 0
-            header = img[0].header
-            wcs = WCS(header)
-            testx,testy = img[pos].shape
-        except:
-            pos = 1
-            header = img[0].header
-            wcs = WCS(header)
-            testx,testy = img[pos].shape
-        # if name in ['NGC6822','NGC1705']:
-        #     pos = 1
-        # elif sampleName == 'DGS':
-        #     pos = 1
-        # else:
-        #     pos = 0
+    #     try:
+    #         pos = 0
+    #         header = img[0].header
+    #         wcs = WCS(header)
+    #         testx,testy = img[pos].shape
+    #     except:
+    #         pos = 1
+    #         header = img[0].header
+    #         wcs = WCS(header)
+    #         testx,testy = img[pos].shape
+    #     # if name in ['NGC6822','NGC1705']:
+    #     #     pos = 1
+    #     # elif sampleName == 'DGS':
+    #     #     pos = 1
+    #     # else:
+    #     #     pos = 0
 
-        # header = img[pos].header
-        # wcs = WCS(header)
-        # cdelt1 = header['cdelt1']*3600
-        # cdelt2 = header['cdelt2']*3600
+    #     # header = img[pos].header
+    #     # wcs = WCS(header)
+    #     # cdelt1 = header['cdelt1']*3600
+    #     # cdelt2 = header['cdelt2']*3600
         
-        crpix1 = header['crpix1']
-        crpix2 = header['crpix2']
+    #     crpix1 = header['crpix1']
+    #     crpix2 = header['crpix2']
         
-        cdelt1 = 3600.*np.abs(header['cdelt1']) # np.abs(
-        cdelt2 = 3600.*np.abs(header['cdelt2']) # np.abs(
-        # pixel_size = header['pfov']  # arcseconds
+    #     cdelt1 = 3600.*np.abs(header['cdelt1']) # np.abs(
+    #     cdelt2 = 3600.*np.abs(header['cdelt2']) # np.abs(
+    #     # pixel_size = header['pfov']  # arcseconds
         
-        # crpix1 = header['crpix1']
-        # crpix2 = header['crpix2']
+    #     # crpix1 = header['crpix1']
+    #     # crpix2 = header['crpix2']
 
-        #Needs to rescale back to pixels
-        sx = x*cdelt2 + crpix2
-        sy = y*cdelt1 + crpix1
+    #     #Needs to rescale back to pixels
+    #     sx = x*cdelt2 + crpix2
+    #     sy = y*cdelt1 + crpix1
         
-        #Use WCS to get ra and dec
-        ra, dec = wcs.all_pix2world(sx, sy, 0, ra_dec_order = True)
+    #     #Use WCS to get ra and dec
+    #     ra, dec = wcs.all_pix2world(sx, sy, 0, ra_dec_order = True)
 
-        fluxes = []
-        # error_fluxes = []
+    #     fluxes = []
+    #     # error_fluxes = []
 
-        #Loop through images, converting RA and Dec to pixel positon for each map and storing the values
-        for i in [self.data['500 band'][row], self.data['350 band'][row], self.data['250 band'][row]]:
-            img = fits.open(i.values[0],memmap=False)
-            wcs = WCS(img[0].header)
-            py, px = wcs.all_world2pix(ra, dec, 0, ra_dec_order = True)
-            # epx, epy = wcs.all_world2pix(self.era, self.edec, 0)
+    #     #Loop through images, converting RA and Dec to pixel positon for each map and storing the values
+    #     for i in [self.data['500 band'][row], self.data['350 band'][row], self.data['250 band'][row]]:
+    #         img = fits.open(i.values[0],memmap=False)
+    #         wcs = WCS(img[0].header)
+    #         py, px = wcs.all_world2pix(ra, dec, 0, ra_dec_order = True)
+    #         # epx, epy = wcs.all_world2pix(self.era, self.edec, 0)
 
-            py = int(np.round(py))
-            px = int(np.round(px))
-            print(f'PX {px}')
-            print(f'PY {py}')
+    #         py = int(np.floor(py))
+    #         px = int(np.floor(px))
+    #         print(f'PX {px}')
+    #         print(f'PY {py}')
 
-            # epx = int(np.round(epx))
-            # epy = int(np.round(epy))
+    #         # epx = int(np.round(epx))
+    #         # epy = int(np.round(epy))
 
-            # data indexed by row column
-            fluxes.append(img[pos].data[py,px])
-            # error_fluxes[i] = self.unc[i]['img'][epx, epy]
-        return fluxes
+    #         # data indexed by row column
+    #         fluxes.append(img[pos].data[py,px])
+    #         # error_fluxes[i] = self.unc[i]['img'][epx, epy]
+    #     return fluxes
 
     def bb(self, f, T):
         '''
@@ -311,13 +392,13 @@ class Sample:
         except:
             return mbb
 
-    def fit(self, x, y, herschelBand, galaxyName, sampleName, time_hours, area_deg2, atmFactor, beta):
+    def fit(self, pix_row, pix_col, herschelBand, galaxyName, sampleName, time_hours, area_deg2, atmFactor, beta):
         '''
         Get flux and fit it with greybody
         '''
         self.beta = beta
         self.herschelBand = herschelBand
-        map_flux = self.get_flux(x, y, herschelBand, galaxyName, sampleName)
+        map_flux = self.get_flux(pix_col, pix_row, herschelBand, galaxyName, sampleName)
         #convert flux from MJy/sr to cgs as model input [500, 350, 250]
         # flux = (np.array(map_flux)*10**6)*self.Jy_to_cgs
         freq = np.array([self.w_micron_to_nu/self.w_micron[i] for i in ['500 band', '350 band', '250 band']], dtype=float)
@@ -442,8 +523,8 @@ class Sample:
 
         #Get clicked position.  Return no_update if nothing clicked to prevent errors
         try:
-            x = herschelClickData['points'][0]['x']
-            y = herschelClickData['points'][0]['y']
+            pix_col = herschelClickData['points'][0]['x']
+            pix_row = herschelClickData['points'][0]['y']
         except:
             return [dash.no_update, dash.no_update, dash.no_update]
         
@@ -465,7 +546,7 @@ class Sample:
 
         #Fit the currently selected pixel
         # self.obs[self.indx].fit(x, y, w, time_hours, area_deg2, atmFactor, beta)
-        BB, toltec_fit_fluxes, map_flux, nu_fit, T_fit, const_fit = self.fit(x, y, herschelBand, galaxyName, sampleName, time_hours, area_deg2, atmFactor, beta)
+        BB, toltec_fit_fluxes, map_flux, nu_fit, T_fit, const_fit = self.fit(pix_row, pix_col, herschelBand, galaxyName, sampleName, time_hours, area_deg2, atmFactor, beta)
 
         #Create fit figure
         np.seterr(divide='raise')
@@ -515,7 +596,7 @@ class Sample:
                                             )
 
             #Add scatter point at clicked position
-            toltec_fig.add_trace(go.Scatter(x=[x], y=[y], mode='markers',
+            toltec_fig.add_trace(go.Scatter(x=[pix_col], y=[pix_row], mode='markers',
                                             marker_symbol='square',
                                             marker=dict(
                                                 color='LightGreen',
